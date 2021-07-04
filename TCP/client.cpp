@@ -14,22 +14,7 @@
 #include	    <limits.h>		/* for OPEN_MAX */
 #include 	    <poll.h>
 #include 	    <unistd.h>
-#include        <sys/types.h>   /* basic system data types */
-#include        <sys/socket.h>  /* basic socket definitions */
-#include        <sys/time.h>    /* timeval{} for select() */
-#include        <time.h>                /* timespec{} for pselect() */
-#include        <netinet/in.h>  /* sockaddr_in{} and other Internet defns */
-#include        <arpa/inet.h>   /* inet(3) functions */
-#include        <errno.h>
-#include        <fcntl.h>               /* for nonblocking */
-#include        <netdb.h>
-#include        <signal.h>
-#include        <stdio.h>
-#include        <stdlib.h>
-#include        <string.h>
-#include	    <limits.h>		/* for OPEN_MAX */
-#include 	    <poll.h>
-#include 	    <unistd.h>
+
 #include        <ostream>
 #include        <iostream>
 
@@ -38,21 +23,39 @@ using namespace std;
 #define MAXLINE 2048
 #define SA struct sockaddr
 #define STDIN 0
+#define MAXNICKLEN 1024
 
 
-
-
-
-int main(){
+int main(int argc, char *argv[]){
     int sockfd;
     struct sockaddr_in servaddr;
     int n, max_fd, nready;
     int SERVER_PORT = 55555;
-    char SERVER_ADDR[] = "127.0.0.1";
+    char SERVER_ADDR[INET_ADDRSTRLEN];
 
     char recv_buf[MAXLINE];
     char send_buf[MAXLINE];
     fd_set master_set;
+
+    char nickname[MAXNICKLEN];
+    char msg[MAXLINE + MAXNICKLEN];
+
+    // Check for input parameters
+    if(argc<3){
+        cout<<"Not enough arguments"<<endl;
+        return 1;
+    }
+    if(argc>3){
+        cout<<"Too many arguments"<<endl;
+        return 1;
+    }
+    
+    // Get the nickname string
+    strcpy(nickname, argv[2]);
+    cout<<nickname<<endl;
+    
+    
+    
 
     // Create client socket descriptor
     if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
@@ -63,7 +66,7 @@ int main(){
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(SERVER_PORT);
-    if(inet_pton(AF_INET, SERVER_ADDR, &servaddr.sin_addr.s_addr) <= 0){
+    if(inet_pton(AF_INET, argv[1], &servaddr.sin_addr.s_addr) <= 0){
         perror("Addres string to bytes conversion error");
         return 1;
     }
@@ -78,6 +81,12 @@ int main(){
 
     // Client program loop
     while(true){
+        // Clear buffers
+        for(int i=0; i<MAXLINE; i++){
+            recv_buf[i] = 0;
+            send_buf[i] = 0;
+        }
+
         // Clear the set
         FD_ZERO(&master_set);
         
@@ -116,14 +125,26 @@ int main(){
             }
         }
         if(FD_ISSET(STDIN, &master_set)){
+            // Clear msg buffer
+            for(int i=0; i<sizeof(msg); i++){
+                msg[i] = 0;
+            }
+            
+            // Print empty line
             cout<<endl;
-            // Read data from standard input to send buffor
+
+            // Read data from standard input to send buffer
             if((n = read(STDIN, send_buf, MAXLINE)) < 0){ 
                 perror("Read error");
             }
+            // Create the message
+            strcat(msg, nickname);
+            strcat(msg, ": ");
+            strcat(msg, send_buf);
+
             send_buf[n] = 0;
             // Send data to the server
-            if((send(sockfd, send_buf, MAXLINE, 0)) < 0){ 
+            if((send(sockfd, msg, strlen(msg), 0)) < 0){ 
                 perror("Send error");
             }
         }

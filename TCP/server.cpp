@@ -73,7 +73,7 @@ int main(int argc, char *argv[]){
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     // Overwriting previous line in order to bind to loopback
-    inet_pton(AF_INET, "127.0.0.1", &(servaddr.sin_addr.s_addr)); 
+    inet_pton(AF_INET, "0.0.0.0", &(servaddr.sin_addr.s_addr)); 
     servaddr.sin_port = htons(PORT);
 
     // Bind listening socket to local PORT
@@ -99,6 +99,11 @@ int main(int argc, char *argv[]){
         FD_SET(listenfd, &master_set);
         max_fd = listenfd;
 
+        // Clear buffers
+        for(int i=0; i<MAXLINE; i++){
+            recv_buf[i] = 0;
+            send_buf[i] = 0;
+        }
 
         // Add child sockets to the set
         for(i=0; i<MAXCLIENTS; i++){
@@ -184,6 +189,7 @@ int main(int argc, char *argv[]){
                     // Send received message to all clients
                     for(i=0; i<MAXCLIENTS; i++){
                         if(clients[i] > 0 && clients[i] != sockfd){
+                            cout<<"SENDING "<<recv_buf<<endl;
                             if((send(clients[i], recv_buf, sizeof(recv_buf), 0)) < 0){
                                 perror("Send error");
                             }
