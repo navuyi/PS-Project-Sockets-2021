@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
                 close(sockfd);
                 return -1;
             }
-            buf[nread] = 0;
+            
             if (sendto(sockfd, buf, nread, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
                 perror("send() to sockfd");
                 close(sockfd);
@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
                 close(sockfd);
                 return -1;
             }
+            buf[nread] = 0;
             printf("Received >\t%s", buf);
         }
     }
