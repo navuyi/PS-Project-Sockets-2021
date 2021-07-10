@@ -58,6 +58,10 @@ int main(int argc, char *argv[]) {
     printf("Listening\n");
 
     for (;;) {
+
+	for (int i=0; i<sizeof(buf); i++){
+		buf[i]=0;
+	}	
         len = sizeof(client_addr);
         if ((nread = sctp_recvmsg(sockfd, buf, sizeof(buf), (struct sockaddr *)&client_addr, &len, &sinfo, &flags) < 0)) {
             perror("sctp_recvmsg()");
